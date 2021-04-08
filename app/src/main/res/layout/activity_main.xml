@@ -6,14 +6,26 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.cesarynga.docscan.ScannerImageView
-        android:id="@+id/imageScannerView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
+    <Button
+        android:id="@+id/btnStaticScanner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Static Scanner"
+        app:layout_constraintBottom_toTopOf="@+id/btnRealTimeScanner"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
+
+    <Button
+        android:id="@+id/btnRealTimeScanner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Real Time Scanner"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
+        app:layout_constraintTop_toBottomOf="@+id/btnStaticScanner" />
 </androidx.constraintlayout.widget.ConstraintLayout>

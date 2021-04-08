@@ -9,6 +9,8 @@ import org.opencv.android.OpenCVLoader
 import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
+import kotlin.math.abs
+import kotlin.math.sqrt
 
 
 fun init() {
@@ -29,17 +31,24 @@ fun scan(bitmap: Bitmap, threshold1: Int, threshold2: Int): List<android.graphic
     mat = erode(mat)
 
     val contours = findContours(mat)
-    val biggest = biggestContours(contours)
-    val reordered = reorderPoints(biggest)
-
-    for (point in reordered) {
-        Log.d("CONTOURS", "${point}")
-    }
-
-//    val result = matToBitmap(mat)
     mat.release()
 
-    return reordered
+    if (contours.isNotEmpty()) {
+        val biggest = biggestContours(contours) ?: return emptyList()
+
+        val reordered = reorderPoints(biggest)
+
+        val stringBuilder = StringBuilder()
+        reordered.forEachIndexed { index, point ->
+            if (index == 0) stringBuilder.append("[")
+            stringBuilder.append("(${point.x},${point.y})")
+            if (index == reordered.size - 1) stringBuilder.append("]")
+        }
+        Log.d("DocScan", "Corners: $stringBuilder")
+        return reordered
+    }
+
+    return emptyList()
 }
 
 private fun grayScale(src: Mat): Mat {
@@ -94,10 +103,11 @@ private fun findContours(src: Mat): List<MatOfPoint> {
     return contours
 }
 
-private fun biggestContours(contours: List<MatOfPoint>): MatOfPoint2f {
-    var biggest = MatOfPoint2f()
-    var maxArea = 0
-    for (contour in contours) {
+private fun biggestContours(contours: List<MatOfPoint>): MatOfPoint2f? {
+    var biggest: MatOfPoint2f? = null
+    var maxArea = 0.0
+
+    contours.forEach { contour ->
         val area = Imgproc.contourArea(contour)
         if (area > 5000) {
             val matFloat = MatOfPoint2f()
@@ -107,8 +117,9 @@ private fun biggestContours(contours: List<MatOfPoint>): MatOfPoint2f {
             val approx = MatOfPoint2f()
             Imgproc.approxPolyDP(matFloat, approx, 0.02 * arcLength, true)
 
-            if (area > maxArea && approx.rows() == 4) {
+            if (area > maxArea && isRectangle(approx)) {
                 biggest = approx
+                maxArea = area
             }
         }
     }
@@ -120,17 +131,20 @@ private fun reorderPoints(point2f: MatOfPoint2f): List<android.graphics.Point> {
 
     val centerPoint = android.graphics.Point()
     val size = points.size
-    for (pointF in points) {
+
+    points.forEach { pointF ->
         centerPoint.x += (pointF.x / size).toInt()
         centerPoint.y += (pointF.y / size).toInt()
     }
+
     val orderedPoints = mutableListOf(
         android.graphics.Point(),
         android.graphics.Point(),
         android.graphics.Point(),
         android.graphics.Point()
     )
-    for (point in points) {
+
+    points.forEach { point ->
         var index = -1
         if (point.x < centerPoint.x && point.y < centerPoint.y) {
             index = 0
@@ -141,10 +155,49 @@ private fun reorderPoints(point2f: MatOfPoint2f): List<android.graphics.Point> {
         } else if (point.x < centerPoint.x && point.y > centerPoint.y) {
             index = 3
         }
-        orderedPoints[index].x = point.x.toInt()
-        orderedPoints[index].y = point.y.toInt()
+        if (index != -1) {
+            orderedPoints[index].x = point.x.toInt()
+            orderedPoints[index].y = point.y.toInt()
+        } else {
+            return emptyList()
+        }
     }
     return orderedPoints
+}
+
+private fun isRectangle(polygon: MatOfPoint2f): Boolean {
+    if (polygon.rows() != 4) {
+        return false
+    }
+
+    val polygonInt = MatOfPoint()
+    polygon.convertTo(polygonInt, CvType.CV_32S)
+
+    if (!Imgproc.isContourConvex(polygonInt)) {
+        return false
+    }
+
+    // Check if the all angles are more than 72.54 degrees (cos 0.3).
+    var maxCosine = 0.0
+    val approxPoints = polygon.toArray()
+    for (i in 2..4) {
+        val cosine: Double = abs(
+            angle(
+                approxPoints[i % 4],
+                approxPoints[i - 2], approxPoints[i - 1]
+            )
+        )
+        maxCosine = Math.max(cosine, maxCosine)
+    }
+    return maxCosine < 0.3
+}
+
+fun angle(p1: Point, p2: Point, p0: Point): Double {
+    val dx1 = p1.x - p0.x
+    val dy1 = p1.y - p0.y
+    val dx2 = p2.x - p0.x
+    val dy2 = p2.y - p0.y
+    return (dx1 * dx2 + dy1 * dy2) / sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10)
 }
 
 private fun bitmapToMat(bitmap: Bitmap): Mat {

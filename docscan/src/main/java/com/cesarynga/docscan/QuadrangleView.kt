@@ -3,6 +3,7 @@ package com.cesarynga.docscan
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 
 class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
@@ -12,7 +13,12 @@ class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, 
 
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
 
-    constructor(context: Context, attrs: AttributeSet?,defStyleAttr: Int) : this(context, attrs, 0, 0)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : this(
+        context,
+        attrs,
+        0,
+        0
+    )
 
     private val borderPaint = Paint().apply {
         color = Color.GREEN
@@ -30,11 +36,21 @@ class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, 
 
     private var corners = emptyList<Point>()
 
-    fun setCorners(corners : List<Point>) {
-        if (corners.size != 4) throw IllegalArgumentException("Corners list for QuadrangleView must have 4 items.")
+    fun setCorners(corners: List<Point>) {
+        if (corners.size != 4) {
+            Log.w(
+                TAG,
+                "QuadrangleView must receive a list of 4 android.graphics.Point for being able to draw a quadrangle. Current corners param size is ${corners.size}. QuadrangleView will be cleared."
+            )
+            clear()
+        } else {
+            this.corners = corners
+            invalidate()
+        }
+    }
 
-        this.corners = corners
-
+    fun clear() {
+        this.corners = emptyList()
         invalidate()
     }
 
@@ -58,5 +74,9 @@ class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, 
 
             restore()
         }
+    }
+
+    companion object {
+        private const val TAG = "QuadrangleView"
     }
 }
