@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     tools:context=".ScannerImageActivity">
 
-    <com.cesarynga.docscan.ScannerImageView
+    <com.cesarynga.docscan.image.ScannerImageView
         android:id="@+id/scannerImageView"
         android:layout_width="0dp"
         android:layout_height="0dp"

@@ -1,4 +1,4 @@
-package com.cesarynga.docscan
+package com.cesarynga.docscan.image
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,6 +6,8 @@ import android.graphics.Point
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import android.widget.ImageView
+import com.cesarynga.docscan.QuadrangleView
+import com.cesarynga.docscan.scan
 import kotlin.math.min
 
 class ScannerImageView(

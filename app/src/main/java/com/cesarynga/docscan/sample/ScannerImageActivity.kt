@@ -10,7 +10,7 @@ class ScannerImageActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityScannerImageBinding
 
-    private val sampleImage = R.drawable.sample_document
+    private val sampleImage = R.drawable.sample_check
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -1,8 +1,6 @@
-package com.cesarynga.docscan
+package com.cesarynga.docscan.camera
 
 import android.content.Context
-import android.graphics.Point
-import android.graphics.PointF
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
@@ -14,6 +12,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.cesarynga.docscan.QuadrangleView
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs

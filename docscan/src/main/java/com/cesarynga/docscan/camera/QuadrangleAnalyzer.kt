@@ -1,4 +1,4 @@
-package com.cesarynga.docscan
+package com.cesarynga.docscan.camera
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -6,6 +6,9 @@ import android.graphics.Point
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.cesarynga.docscan.rotate
+import com.cesarynga.docscan.scan
+import com.cesarynga.docscan.yuvToRgb
 
 typealias QuadrangleAnalyzerListener = (corners: List<Point>) -> Unit
 
