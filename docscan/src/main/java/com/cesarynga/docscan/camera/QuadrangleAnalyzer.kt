@@ -6,8 +6,8 @@ import android.graphics.Point
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import com.cesarynga.docscan.DocScan
 import com.cesarynga.docscan.rotate
-import com.cesarynga.docscan.scan
 import com.cesarynga.docscan.yuvToRgb
 
 typealias QuadrangleAnalyzerListener = (corners: List<Point>) -> Unit
@@ -19,6 +19,7 @@ class QuadrangleAnalyzer(
     private val analyzerListener: QuadrangleAnalyzerListener
 ) : ImageAnalysis.Analyzer {
 
+    private val docScan = DocScan
 
     @SuppressLint("UnsafeExperimentalUsageError")
     override fun analyze(imageProxy: ImageProxy) {
@@ -31,7 +32,7 @@ class QuadrangleAnalyzer(
             bitmap = bitmap.rotate(rotationDegrees.toFloat())
             Log.d(TAG, "analyze: bitmap size=${bitmap.width}x${bitmap.height}]")
 
-            val corners = scan(bitmap, 50, 100)
+            val corners = docScan.scan(bitmap)
 
             convertPointsToPreviewCoordinates(corners, previewWidth, previewHeight, bitmap.width, bitmap.height)
 

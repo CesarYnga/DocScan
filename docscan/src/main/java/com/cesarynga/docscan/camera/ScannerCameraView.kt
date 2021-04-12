@@ -91,9 +91,19 @@ class ScannerCameraView(
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                     .also {
-                        it.setAnalyzer(cameraExecutor, QuadrangleAnalyzer(context, previewView.width, previewView.height) { corners ->
-                            quadrangleView.setCorners(corners)
-                        })
+                        it.setAnalyzer(
+                            cameraExecutor,
+                            QuadrangleAnalyzer(
+                                context,
+                                previewView.width,
+                                previewView.height
+                            ) { corners ->
+                                if (corners.size == 4) {
+                                    quadrangleView.setCorners(corners)
+                                } else {
+                                    quadrangleView.clear()
+                                }
+                            })
                     }
 
                 // Select back camera as a default

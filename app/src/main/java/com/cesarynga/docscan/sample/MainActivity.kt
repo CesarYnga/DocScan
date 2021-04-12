@@ -21,6 +21,9 @@ class MainActivity : AppCompatActivity() {
             btnRealTimeScanner.setOnClickListener {
                 startActivity(Intent(this@MainActivity, ScannerCameraActivity::class.java))
             }
+            btnDewarp.setOnClickListener {
+                startActivity(Intent(this@MainActivity, DewarpActivity::class.java))
+            }
         }
     }
 }

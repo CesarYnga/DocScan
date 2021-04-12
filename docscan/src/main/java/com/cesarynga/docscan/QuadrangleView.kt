@@ -3,7 +3,6 @@ package com.cesarynga.docscan
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.View
 
 class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
@@ -38,16 +37,13 @@ class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, 
 
     fun setCorners(corners: List<Point>) {
         if (corners.size != 4) {
-            Log.w(
-                TAG,
-                "QuadrangleView must receive a list of 4 android.graphics.Point for being able to draw a quadrangle. Current corners param size is ${corners.size}. QuadrangleView will be cleared."
-            )
-            clear()
+            throw IllegalArgumentException("corners param must have 4 items. Current corners params has ${corners.size} items.")
         } else {
             this.corners = corners
             invalidate()
         }
     }
+
 
     fun clear() {
         this.corners = emptyList()

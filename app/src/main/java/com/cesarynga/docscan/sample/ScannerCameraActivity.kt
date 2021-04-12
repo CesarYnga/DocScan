@@ -7,7 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.cesarynga.docscan.init
 import com.cesarynga.docscan.sample.databinding.ActivityScannerCameraBinding
 
 class ScannerCameraActivity : AppCompatActivity() {
@@ -18,8 +17,6 @@ class ScannerCameraActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityScannerCameraBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        init()
 
         requestCameraPermission()
     }

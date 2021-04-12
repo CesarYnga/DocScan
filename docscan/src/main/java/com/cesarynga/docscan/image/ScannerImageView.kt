@@ -6,8 +6,8 @@ import android.graphics.Point
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import android.widget.ImageView
+import com.cesarynga.docscan.DocScan
 import com.cesarynga.docscan.QuadrangleView
-import com.cesarynga.docscan.scan
 import kotlin.math.min
 
 class ScannerImageView(
@@ -33,6 +33,7 @@ class ScannerImageView(
 
     private var scaleFactor = 1f
     private var points = emptyList<Point>()
+    private val docScan = DocScan
 
     init {
         addView(imageView)
@@ -47,11 +48,7 @@ class ScannerImageView(
             val scaledBitmap = scaleBitmap(bitmap, scaleFactor)
             imageView.setImageBitmap(scaledBitmap)
 
-            points = scan(
-                bitmap,
-                50,
-                100
-            )
+            points = docScan.scan(bitmap)
 
             val scaledPoints = scalePoints(points, scaleFactor)
 
