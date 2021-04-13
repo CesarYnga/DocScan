@@ -3,9 +3,15 @@ package com.cesarynga.docscan
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.TypedValue
 import android.view.View
 
-class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :
+internal class QuadrangleView(
+    context: Context,
+    attrs: AttributeSet?,
+    defStyleAttr: Int,
+    defStyleRes: Int
+) :
     View(context, attrs, defStyleAttr, defStyleRes) {
 
     constructor(context: Context) : this(context, null)
@@ -15,19 +21,38 @@ class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, 
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : this(
         context,
         attrs,
-        0,
+        defStyleAttr,
         0
     )
 
-    private val borderPaint = Paint().apply {
-        color = Color.GREEN
+    var fillColor: Int = Color.argb(63, 255, 255, 255)
+        set(value) {
+            field = value
+            fillPaint.color = value
+        }
+
+    var strokeColor: Int = Color.WHITE
+        set(value) {
+            field = value
+            strokePaint.color = value
+        }
+
+    var strokeWidth: Float =
+        TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
+        set(value) {
+            field = value
+            strokePaint.strokeWidth = value
+        }
+
+    private val strokePaint = Paint().apply {
+        color = strokeColor
         style = Paint.Style.STROKE
-        strokeWidth = 8f
+        strokeWidth = this@QuadrangleView.strokeWidth
         isAntiAlias = true
     }
 
     private val fillPaint = Paint().apply {
-        color = Color.argb(75, 0, 255, 0)
+        color = fillColor
         style = Paint.Style.FILL
     }
 
@@ -37,7 +62,7 @@ class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, 
 
     fun setCorners(corners: List<Point>) {
         if (corners.size != 4) {
-            throw IllegalArgumentException("corners param must have 4 items. Current corners params has ${corners.size} items.")
+            throw IllegalArgumentException("setCorners: corner list must have 4 items. Current corners params has ${corners.size} items.")
         } else {
             this.corners = corners
             invalidate()
@@ -53,8 +78,6 @@ class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, 
     override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
         canvas?.apply {
-            save()
-
             quadranglePath.reset()
 
             if (corners.isNotEmpty()) {
@@ -65,14 +88,8 @@ class QuadrangleView(context: Context, attrs: AttributeSet?, defStyleAttr: Int, 
                 quadranglePath.close()
             }
 
-            canvas.drawPath(quadranglePath, fillPaint)
-            canvas.drawPath(quadranglePath, borderPaint)
-
-            restore()
+            drawPath(quadranglePath, fillPaint)
+            drawPath(quadranglePath, strokePaint)
         }
-    }
-
-    companion object {
-        private const val TAG = "QuadrangleView"
     }
 }

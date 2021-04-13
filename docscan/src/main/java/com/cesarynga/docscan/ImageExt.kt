@@ -5,11 +5,15 @@ import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
+import android.media.ExifInterface
 import android.media.Image
+import android.net.Uri
 import android.renderscript.*
+import java.io.File
+import java.io.FileOutputStream
 
 
-fun Image.yuvToRgb(context: Context) : Bitmap {
+fun Image.yuvToRgb(context: Context): Bitmap {
     val outputBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
     val pixelCount = cropRect.width() * cropRect.height()
@@ -159,4 +163,48 @@ private fun imageToByteArray(image: Image, outputBuffer: ByteArray) {
 fun Bitmap.rotate(degrees: Float): Bitmap {
     val matrix = Matrix().apply { postRotate(degrees) }
     return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+}
+
+fun Bitmap.rotateWithExif(path: String): Bitmap {
+    val exifInterface = ExifInterface(path)
+    val orientation: Int = exifInterface.getAttributeInt(
+        ExifInterface.TAG_ORIENTATION,
+        ExifInterface.ORIENTATION_UNDEFINED
+    )
+
+    val width: Int = exifInterface.getAttributeInt(
+        ExifInterface.TAG_IMAGE_WIDTH,
+        0
+    )
+
+    val height: Int = exifInterface.getAttributeInt(
+        ExifInterface.TAG_IMAGE_LENGTH,
+        0
+    )
+
+    val degrees = exifToDegrees(orientation)
+
+    val matrix = Matrix().apply { postRotate(degrees.toFloat()) }
+    return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
+}
+
+fun Bitmap.saveInFile(file: File) {
+    val fos = FileOutputStream(file)
+    compress(Bitmap.CompressFormat.JPEG, 100, fos)
+    fos.close()
+}
+
+private fun exifToDegrees(exifOrientation: Int): Int {
+    return when (exifOrientation) {
+        ExifInterface.ORIENTATION_ROTATE_90 -> {
+            90
+        }
+        ExifInterface.ORIENTATION_ROTATE_180 -> {
+            180
+        }
+        ExifInterface.ORIENTATION_ROTATE_270 -> {
+            270
+        }
+        else -> 0
+    }
 }

@@ -3,11 +3,14 @@ package com.cesarynga.docscan.image
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Point
+import android.net.Uri
 import android.util.AttributeSet
-import android.widget.FrameLayout
 import android.widget.ImageView
 import com.cesarynga.docscan.DocScan
-import com.cesarynga.docscan.QuadrangleView
+import com.cesarynga.docscan.ScannerView
+import com.cesarynga.docscan.exception.NoDocumentDetectedException
+import com.cesarynga.docscan.saveInFile
+import java.io.File
 import kotlin.math.min
 
 class ScannerImageView(
@@ -15,7 +18,7 @@ class ScannerImageView(
     attrs: AttributeSet?,
     defStyleAttr: Int,
     defStyleRes: Int
-) : FrameLayout(context, attrs, defStyleAttr, defStyleRes) {
+) : ScannerView(context, attrs, defStyleAttr, defStyleRes) {
 
     constructor(context: Context) : this(context, null)
 
@@ -29,32 +32,52 @@ class ScannerImageView(
     )
 
     private val imageView: ImageView = ImageView(context)
-    private val quadrangleView: QuadrangleView = QuadrangleView(context)
 
+    private lateinit var bitmap: Bitmap
     private var scaleFactor = 1f
-    private var points = emptyList<Point>()
-    private val docScan = DocScan
 
     init {
-        addView(imageView)
-        addView(quadrangleView)
+        addView(imageView, 0)
     }
 
-    fun setBitmap(bitmap: Bitmap) {
+    fun scan(bitmap: Bitmap, selectAllOnError: Boolean = false, callback: ScannerImageCallback) {
         imageView.post {
+            this.bitmap = bitmap
             // Display bitmap efficiently
             scaleFactor =
                 getScaleFactor(bitmap.width, bitmap.height, imageView.width, imageView.height)
             val scaledBitmap = scaleBitmap(bitmap, scaleFactor)
             imageView.setImageBitmap(scaledBitmap)
 
-            points = docScan.scan(bitmap)
+            val corners = DocScan.scan(bitmap)
 
-            val scaledPoints = scalePoints(points, scaleFactor)
+            if (corners.isNotEmpty()) {
+                val scaledCorners = scalePoints(corners, scaleFactor)
+                movePoints(scaledCorners, scaledBitmap.width, scaledBitmap.height)
+                quadrangleView.setCorners(scaledCorners)
 
-            movePoints(scaledPoints, scaledBitmap.width, scaledBitmap.height)
+                val scanResult = ScanResult(context, bitmap, corners)
 
-            quadrangleView.setCorners(scaledPoints)
+                callback.onScanSuccess(scanResult)
+            } else {
+                if (selectAllOnError) {
+                    val cornersWholeImage = listOf(
+                        Point(0, 0),
+                        Point(bitmap.width, 0),
+                        Point(bitmap.width, bitmap.height),
+                        Point(0, bitmap.height)
+                    )
+                    val scaledCorners = scalePoints(cornersWholeImage, scaleFactor)
+                    movePoints(scaledCorners, scaledBitmap.width, scaledBitmap.height)
+                    quadrangleView.setCorners(scaledCorners)
+
+                    val scanResult = ScanResult(context, bitmap, cornersWholeImage)
+
+                    callback.onScanSuccess(scanResult)
+                } else {
+                    callback.onScanError(NoDocumentDetectedException("Document not detected on given bitmap"))
+                }
+            }
         }
     }
 
@@ -105,5 +128,37 @@ class ScannerImageView(
             (photoHeight * scaleFactor).toInt(),
             false
         )
+    }
+
+    interface ScannerImageCallback {
+        fun onScanSuccess(scanResult: ScanResult)
+
+        fun onScanError(e: Exception)
+    }
+
+    class ScanResult(
+        private val context: Context,
+        val bitmap: Bitmap,
+        val corners: List<Point>
+    ) {
+
+        fun crop(
+            outputFile: File = File.createTempFile(
+                "docscan_cropped",
+                PHOTO_EXTENSION,
+                context.cacheDir
+            )
+        ): Uri {
+            val croppedBitmap = DocScan.crop(bitmap, corners)
+
+            croppedBitmap.saveInFile(outputFile)
+
+            return Uri.fromFile(outputFile)
+        }
+    }
+
+    companion object {
+        private const val TAG = "ScannerCameraView"
+        private const val PHOTO_EXTENSION = ".jpg"
     }
 }

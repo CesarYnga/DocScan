@@ -1,8 +1,8 @@
 package com.cesarynga.docscan.sample
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
 import com.cesarynga.docscan.sample.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -20,9 +20,6 @@ class MainActivity : AppCompatActivity() {
             }
             btnRealTimeScanner.setOnClickListener {
                 startActivity(Intent(this@MainActivity, ScannerCameraActivity::class.java))
-            }
-            btnDewarp.setOnClickListener {
-                startActivity(Intent(this@MainActivity, DewarpActivity::class.java))
             }
         }
     }

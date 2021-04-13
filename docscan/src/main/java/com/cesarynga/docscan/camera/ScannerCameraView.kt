@@ -1,30 +1,35 @@
 package com.cesarynga.docscan.camera
 
 import android.content.Context
+import android.graphics.Color
+import android.net.Uri
 import android.util.AttributeSet
 import android.util.Log
+import android.util.TypedValue
 import android.widget.FrameLayout
-import androidx.camera.core.AspectRatio
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.Preview
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import com.cesarynga.docscan.QuadrangleView
+import com.cesarynga.docscan.R
+import com.cesarynga.docscan.ScannerView
+import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+typealias TakePictureCallback = (uri: Uri?) -> Unit
+
 class ScannerCameraView(
     context: Context,
     attrs: AttributeSet?,
     defStyleAttr: Int,
     defStyleRes: Int
-) : FrameLayout(context, attrs, defStyleAttr, defStyleRes) {
+) : ScannerView(context, attrs, defStyleAttr, defStyleRes) {
 
     constructor(context: Context) : this(context, null)
 
@@ -38,12 +43,13 @@ class ScannerCameraView(
     )
 
     private val previewView = PreviewView(context)
-    private val quadrangleView = QuadrangleView(context)
 
     /** Blocking camera operations are performed using this executor */
     private var cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
     private val lifecycleOwner: LifecycleOwner
+
+    private lateinit var imageCapture: ImageCapture
 
     init {
         if (context !is LifecycleOwner) {
@@ -51,10 +57,8 @@ class ScannerCameraView(
         }
         lifecycleOwner = context
 
-        addView(previewView)
+        addView(previewView, 0)
         previewView.scaleType = PreviewView.ScaleType.FILL_CENTER
-
-        addView(quadrangleView)
 
         setupCamera()
     }
@@ -98,13 +102,20 @@ class ScannerCameraView(
                                 previewView.width,
                                 previewView.height
                             ) { corners ->
-                                if (corners.size == 4) {
+                                if (corners.isNotEmpty()) {
                                     quadrangleView.setCorners(corners)
                                 } else {
                                     quadrangleView.clear()
                                 }
                             })
                     }
+
+                // Image Capture
+                imageCapture = ImageCapture.Builder()
+                    .setTargetAspectRatio(screenAspectRatio)
+                    .setTargetRotation(rotation)
+                    .setIoExecutor(cameraExecutor)
+                    .build()
 
                 // Select back camera as a default
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -113,16 +124,44 @@ class ScannerCameraView(
                 cameraProvider.unbindAll()
 
                 try {
+                    // Bind use cases to camera
                     // A variable number of use-cases can be passed here -
                     // camera provides access to CameraControl & CameraInfo
                     val camera = cameraProvider.bindToLifecycle(
-                        lifecycleOwner, cameraSelector, preview, imageAnalyzer
+                        lifecycleOwner, cameraSelector, preview, imageAnalyzer, imageCapture
                     )
-                } catch (exc: Exception) {
-                    Log.e(TAG, "Use case binding failed", exc)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Use case binding failed", e)
                 }
             }, ContextCompat.getMainExecutor(context)
         )
+    }
+
+    fun takePicture(
+        outputFile: File = File.createTempFile(
+            "docscan",
+            PHOTO_EXTENSION,
+            context.cacheDir
+        ), callback: TakePictureCallback
+    ) {
+        if (!this::imageCapture.isInitialized) return
+
+        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(outputFile).build()
+        imageCapture.takePicture(outputFileOptions, ContextCompat.getMainExecutor(context),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(error: ImageCaptureException) {
+                    Log.e(TAG, "Image capture error", error.cause)
+                    quadrangleView.clear()
+                    callback(null)
+                }
+
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    val savedUri = Uri.fromFile(outputFile)
+                    Log.e(TAG, "Image capture succeeded: $savedUri")
+                    quadrangleView.clear()
+                    callback(savedUri)
+                }
+            })
     }
 
     /**

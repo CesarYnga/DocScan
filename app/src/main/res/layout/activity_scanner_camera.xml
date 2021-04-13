@@ -10,10 +10,26 @@
         android:id="@+id/scannerCameraView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:fillColor="@color/teal_200_25"
+        app:strokeColor="@color/teal_200"
+        app:strokeWidth="@dimen/quadrangle_stroke_width"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/btn_take_picture"
+        android:layout_width="@dimen/round_button_size"
+        android:layout_height="@dimen/round_button_size"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@android:color/transparent"
+        android:src="@drawable/ic_shutter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -3,6 +3,8 @@ package com.cesarynga.docscan.camera
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Point
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
@@ -19,8 +21,6 @@ class QuadrangleAnalyzer(
     private val analyzerListener: QuadrangleAnalyzerListener
 ) : ImageAnalysis.Analyzer {
 
-    private val docScan = DocScan
-
     @SuppressLint("UnsafeExperimentalUsageError")
     override fun analyze(imageProxy: ImageProxy) {
         imageProxy.image?.let {
@@ -32,11 +32,13 @@ class QuadrangleAnalyzer(
             bitmap = bitmap.rotate(rotationDegrees.toFloat())
             Log.d(TAG, "analyze: bitmap size=${bitmap.width}x${bitmap.height}]")
 
-            val corners = docScan.scan(bitmap)
+            val corners = DocScan.scan(bitmap)
 
             convertPointsToPreviewCoordinates(corners, previewWidth, previewHeight, bitmap.width, bitmap.height)
 
-            analyzerListener(corners)
+            Handler(Looper.getMainLooper()).post {
+                analyzerListener(corners)
+            }
         }
 
         imageProxy.close()
