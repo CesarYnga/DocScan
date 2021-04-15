@@ -1,19 +1,17 @@
 package com.cesarynga.docscan.camera
 
 import android.content.Context
-import android.graphics.Color
 import android.net.Uri
 import android.util.AttributeSet
 import android.util.Log
-import android.util.TypedValue
-import android.widget.FrameLayout
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.cesarynga.docscan.QuadrangleView
-import com.cesarynga.docscan.R
+import androidx.lifecycle.OnLifecycleEvent
 import com.cesarynga.docscan.ScannerView
 import java.io.File
 import java.util.concurrent.ExecutorService
@@ -56,6 +54,18 @@ class ScannerCameraView(
             throw Exception("The activity/fragment that contains this view must implement LifecycleOwner interface")
         }
         lifecycleOwner = context
+
+        lifecycleOwner.lifecycle.addObserver(object : LifecycleObserver {
+            @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
+            fun connectListener() {
+                quadrangleView.clear()
+            }
+
+            @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+            fun disconnectListener() {
+                cameraExecutor.shutdown()
+            }
+        })
 
         addView(previewView, 0)
         previewView.scaleType = PreviewView.ScaleType.FILL_CENTER
@@ -158,7 +168,6 @@ class ScannerCameraView(
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
                     val savedUri = Uri.fromFile(outputFile)
                     Log.e(TAG, "Image capture succeeded: $savedUri")
-                    quadrangleView.clear()
                     callback(savedUri)
                 }
             })

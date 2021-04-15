@@ -1,4 +1,4 @@
-package com.cesarynga.docscan
+package com.cesarynga.docscan.quadrangle
 
 import android.content.Context
 import android.graphics.*
@@ -68,7 +68,6 @@ internal class QuadrangleView(
             invalidate()
         }
     }
-
 
     fun clear() {
         this.corners = emptyList()

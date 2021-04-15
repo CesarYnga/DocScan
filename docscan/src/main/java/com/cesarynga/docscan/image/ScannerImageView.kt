@@ -33,45 +33,42 @@ class ScannerImageView(
 
     private val imageView: ImageView = ImageView(context)
 
-    private lateinit var bitmap: Bitmap
-    private var scaleFactor = 1f
-
     init {
         addView(imageView, 0)
     }
 
-    fun scan(bitmap: Bitmap, selectAllOnError: Boolean = false, callback: ScannerImageCallback) {
+    fun scan(bitmap: Bitmap, selectAllOnError: Boolean = true, callback: ScannerImageCallback) {
         imageView.post {
-            this.bitmap = bitmap
             // Display bitmap efficiently
-            scaleFactor =
+            val scaleFactor =
                 getScaleFactor(bitmap.width, bitmap.height, imageView.width, imageView.height)
             val scaledBitmap = scaleBitmap(bitmap, scaleFactor)
             imageView.setImageBitmap(scaledBitmap)
 
-            val corners = DocScan.scan(bitmap)
+            val corners = DocScan.scan(scaledBitmap)
 
             if (corners.isNotEmpty()) {
-                val scaledCorners = scalePoints(corners, scaleFactor)
-                movePoints(scaledCorners, scaledBitmap.width, scaledBitmap.height)
-                quadrangleView.setCorners(scaledCorners)
+                val fixedCorners = fixPointsPosition(corners, scaledBitmap.width, scaledBitmap.height)
+                quadrangleView.setCorners(fixedCorners)
 
-                val scanResult = ScanResult(context, bitmap, corners)
+                val scaledCorners = scalePoints(corners, 1f / scaleFactor)
+                val scanResult = ScanResult(context, bitmap, scaledCorners)
 
                 callback.onScanSuccess(scanResult)
             } else {
                 if (selectAllOnError) {
                     val cornersWholeImage = listOf(
                         Point(0, 0),
-                        Point(bitmap.width, 0),
-                        Point(bitmap.width, bitmap.height),
-                        Point(0, bitmap.height)
+                        Point(scaledBitmap.width, 0),
+                        Point(scaledBitmap.width, scaledBitmap.height),
+                        Point(0, scaledBitmap.height)
                     )
-                    val scaledCorners = scalePoints(cornersWholeImage, scaleFactor)
-                    movePoints(scaledCorners, scaledBitmap.width, scaledBitmap.height)
-                    quadrangleView.setCorners(scaledCorners)
 
-                    val scanResult = ScanResult(context, bitmap, cornersWholeImage)
+                    val fixedCorners = fixPointsPosition(cornersWholeImage, scaledBitmap.width, scaledBitmap.height)
+                    quadrangleView.setCorners(fixedCorners)
+
+                    val scaledCorners = scalePoints(cornersWholeImage, 1f / scaleFactor)
+                    val scanResult = ScanResult(context, bitmap, scaledCorners)
 
                     callback.onScanSuccess(scanResult)
                 } else {
@@ -94,7 +91,12 @@ class ScannerImageView(
         return scaledPoints
     }
 
-    private fun movePoints(points: List<Point>, bitmapWidth: Int, bitmapHeight: Int) {
+    /**
+     * Fix the position of the Points to be centered in the QuadrangleView according to the input bitmap.
+     */
+    private fun fixPointsPosition(points: List<Point>, bitmapWidth: Int, bitmapHeight: Int): List<Point> {
+        val fixedPoints = mutableListOf<Point>()
+
         val quadrangleViewWidth = quadrangleView.width
         val quadrangleViewHeight = quadrangleView.height
 
@@ -102,9 +104,14 @@ class ScannerImageView(
         val yDiff = (quadrangleViewHeight - bitmapHeight) / 2
 
         for (point in points) {
-            point.x += xDiff
-            point.y += yDiff
+            fixedPoints.add(
+                Point(
+                    point.x + xDiff,
+                    point.y + yDiff
+                )
+            )
         }
+        return fixedPoints
     }
 
     /**

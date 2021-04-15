@@ -20,8 +20,8 @@ object DocScan {
     //======================================
     fun scan(
         bitmap: Bitmap,
-        threshold1: Int = 75,
-        threshold2: Int = 150
+        threshold1: Int = 50,
+        threshold2: Int = 100
     ): List<android.graphics.Point> {
         var mat = bitmapToMat(bitmap)
 

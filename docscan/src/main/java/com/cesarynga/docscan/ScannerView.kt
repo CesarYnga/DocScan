@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.widget.FrameLayout
+import com.cesarynga.docscan.quadrangle.QuadrangleView
 
 open class ScannerView(
     context: Context,
