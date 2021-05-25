@@ -6,13 +6,14 @@
     android:layout_height="match_parent"
     tools:context=".ScannerImageActivity">
 
-    <com.cesarynga.docscan.image.ScannerImageView
+    <com.cesarynga.docscan.image.ImageScannerView
         android:id="@+id/scannerImageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:fillColor="@color/teal_200_25"
         app:strokeColor="@color/teal_200"
         app:strokeWidth="@dimen/quadrangle_stroke_width"
+        app:showPointers="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"

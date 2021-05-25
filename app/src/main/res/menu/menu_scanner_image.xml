@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group
+        android:id="@+id/group_samples"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/action_sample_check"
+            android:checked="true"
+            android:title="Check" />
+        <item
+            android:id="@+id/action_sample_document"
+            android:title="Document" />
+        <item
+            android:id="@+id/action_sample_multiple_shapes"
+            android:title="Multiple shapes" />
+    </group>
+    <item
+        android:id="@+id/action_crop"
+        android:icon="@drawable/ic_crop"
+        android:title="Crop"
+        app:showAsAction="ifRoom" />
+</menu>

@@ -27,10 +27,6 @@ open class ScannerView(
 
     internal val quadrangleView = QuadrangleView(context)
 
-    var fillColor: Int
-    var strokeColor: Int
-    var strokeWidth: Float
-
     init {
         context.theme.obtainStyledAttributes(
             attrs,
@@ -38,19 +34,20 @@ open class ScannerView(
             defStyleAttr,
             defStyleRes
         ).apply {
-            fillColor =
+            val fillColor =
                 getColor(R.styleable.ScannerView_fillColor, Color.argb(63, 255, 255, 255))
-            strokeColor = getColor(R.styleable.ScannerView_strokeColor, Color.WHITE)
-            strokeWidth = getDimensionPixelSize(
+            val strokeColor = getColor(R.styleable.ScannerView_strokeColor, Color.WHITE)
+            val strokeWidth = getDimensionPixelSize(
                 R.styleable.ScannerView_strokeWidth,
                 TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics)
                     .toInt()
             ).toFloat()
+            quadrangleView.fillColor = fillColor
+            quadrangleView.strokeColor = strokeColor
+            quadrangleView.strokeWidth = strokeWidth
         }
 
-        quadrangleView.fillColor = fillColor
-        quadrangleView.strokeColor = strokeColor
-        quadrangleView.strokeWidth = strokeWidth
+        quadrangleView.layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
 
         addView(quadrangleView)
     }

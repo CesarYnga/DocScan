@@ -5,10 +5,11 @@ import android.graphics.Bitmap
 import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
-import android.media.ExifInterface
 import android.media.Image
-import android.net.Uri
 import android.renderscript.*
+import android.util.Base64
+import androidx.exifinterface.media.ExifInterface
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -188,10 +189,18 @@ fun Bitmap.rotateWithExif(path: String): Bitmap {
     return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
 }
 
-fun Bitmap.saveInFile(file: File) {
+fun Bitmap.saveInFile(file: File, quality: Int) {
     val fos = FileOutputStream(file)
-    compress(Bitmap.CompressFormat.JPEG, 100, fos)
+    compress(Bitmap.CompressFormat.JPEG, quality, fos)
     fos.close()
+}
+
+fun Bitmap.toBase64(quality: Int): String {
+    val bos = ByteArrayOutputStream()
+    compress(Bitmap.CompressFormat.JPEG, quality, bos)
+    val bytes = bos.toByteArray()
+    bos.close()
+    return Base64.encodeToString(bytes, Base64.NO_WRAP)
 }
 
 private fun exifToDegrees(exifOrientation: Int): Int {

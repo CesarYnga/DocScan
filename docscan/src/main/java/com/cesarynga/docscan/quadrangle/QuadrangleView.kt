@@ -2,28 +2,11 @@ package com.cesarynga.docscan.quadrangle
 
 import android.content.Context
 import android.graphics.*
-import android.util.AttributeSet
 import android.util.TypedValue
-import android.view.View
+import android.widget.FrameLayout
+import kotlin.math.ceil
 
-internal class QuadrangleView(
-    context: Context,
-    attrs: AttributeSet?,
-    defStyleAttr: Int,
-    defStyleRes: Int
-) :
-    View(context, attrs, defStyleAttr, defStyleRes) {
-
-    constructor(context: Context) : this(context, null)
-
-    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
-
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : this(
-        context,
-        attrs,
-        defStyleAttr,
-        0
-    )
+internal class QuadrangleView(context: Context) : FrameLayout(context) {
 
     var fillColor: Int = Color.argb(63, 255, 255, 255)
         set(value) {
@@ -58,32 +41,74 @@ internal class QuadrangleView(
 
     private val quadranglePath = Path()
 
-    private var corners = emptyList<Point>()
+    private var corners = emptyList<PointF>()
 
-    fun setCorners(corners: List<Point>) {
+    private val pointers = mutableListOf<QuadranglePointerView>()
+
+    var showPointers = false
+    set(value) {
+        field = value
+        if (!value) {
+            clearPointers()
+        }
+        invalidate()
+    }
+
+    val pointerMinPosition = PointF()
+    val pointerMaxPosition = PointF()
+
+    fun setCorners(corners: List<PointF>, onPointerMoveListener: OnPointerMoveListener? = null) {
         if (corners.size != 4) {
             throw IllegalArgumentException("setCorners: corner list must have 4 items. Current corners params has ${corners.size} items.")
         } else {
             this.corners = corners
+            if (showPointers) {
+                corners.forEachIndexed { index, pointF ->
+                    addCornerPointer(pointF, index)
+                }
+            }
             invalidate()
         }
     }
 
+    private fun addCornerPointer(center: PointF, index: Int) {
+        pointers.add(
+            QuadranglePointerView(context, this, index) {
+
+            }.also {
+                val size = ceil(it.radius * 2).toInt()
+                it.layoutParams = LayoutParams(size, size)
+                it.fillColor = this@QuadrangleView.strokeColor
+                it.center = center
+                addView(it)
+            }
+        )
+    }
+
     fun clear() {
         this.corners = emptyList()
+        clearPointers()
         invalidate()
     }
 
-    override fun onDraw(canvas: Canvas?) {
-        super.onDraw(canvas)
+    private fun clearPointers() {
+        pointers.forEach {
+            removeView(it)
+        }
+        pointers.clear()
+    }
+
+    override fun dispatchDraw(canvas: Canvas?) {
+        super.dispatchDraw(canvas)
         canvas?.apply {
+            // Draw quadrangle
             quadranglePath.reset()
 
             if (corners.isNotEmpty()) {
-                quadranglePath.moveTo(corners[0].x.toFloat(), corners[0].y.toFloat())
-                quadranglePath.lineTo(corners[1].x.toFloat(), corners[1].y.toFloat())
-                quadranglePath.lineTo(corners[2].x.toFloat(), corners[2].y.toFloat())
-                quadranglePath.lineTo(corners[3].x.toFloat(), corners[3].y.toFloat())
+                quadranglePath.moveTo(corners[0].x, corners[0].y)
+                quadranglePath.lineTo(corners[1].x, corners[1].y)
+                quadranglePath.lineTo(corners[2].x, corners[2].y)
+                quadranglePath.lineTo(corners[3].x, corners[3].y)
                 quadranglePath.close()
             }
 

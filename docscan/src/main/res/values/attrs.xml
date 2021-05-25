@@ -6,4 +6,8 @@
         <attr name="strokeWidth" format="dimension"/>
     </declare-styleable>
 
+    <declare-styleable name="ImageScannerView">
+        <attr name="showPointers" format="boolean"/>
+    </declare-styleable>
+
 </resources>

@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +22,8 @@ class ScannerCameraActivity : AppCompatActivity() {
         binding = ActivityScannerCameraBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         requestCameraPermission()
     }
 
@@ -28,6 +32,7 @@ class ScannerCameraActivity : AppCompatActivity() {
             btnTakePicture.setOnClickListener {
                 scannerCameraView.takePicture { uri ->
                     uri?.let {
+                        Log.d("URI", uri.toString())
                         Toast.makeText(this@ScannerCameraActivity, "Uri: ${uri.path}", Toast.LENGTH_SHORT).show()
                         val intent = Intent(this@ScannerCameraActivity, ScannerImageActivity::class.java)
                         intent.putExtra("imageUri", it)
@@ -35,6 +40,7 @@ class ScannerCameraActivity : AppCompatActivity() {
                     } ?: Toast.makeText(this@ScannerCameraActivity, "Error saving image", Toast.LENGTH_SHORT).show()
                 }
             }
+            scannerCameraView.startCamera()
         }
     }
 

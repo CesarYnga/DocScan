@@ -2,18 +2,20 @@ package com.cesarynga.docscan.image
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.Point
+import android.graphics.PointF
 import android.net.Uri
 import android.util.AttributeSet
+import android.util.Log
 import android.widget.ImageView
 import com.cesarynga.docscan.DocScan
+import com.cesarynga.docscan.R
 import com.cesarynga.docscan.ScannerView
 import com.cesarynga.docscan.exception.NoDocumentDetectedException
 import com.cesarynga.docscan.saveInFile
 import java.io.File
 import kotlin.math.min
 
-class ScannerImageView(
+class ImageScannerView(
     context: Context,
     attrs: AttributeSet?,
     defStyleAttr: Int,
@@ -34,6 +36,15 @@ class ScannerImageView(
     private val imageView: ImageView = ImageView(context)
 
     init {
+        context.theme.obtainStyledAttributes(
+            attrs,
+            R.styleable.ImageScannerView,
+            defStyleAttr,
+            defStyleRes
+        ).apply {
+            val showPointers = getBoolean(R.styleable.ImageScannerView_showPointers, true)
+            quadrangleView.showPointers = showPointers
+        }
         addView(imageView, 0)
     }
 
@@ -45,10 +56,19 @@ class ScannerImageView(
             val scaledBitmap = scaleBitmap(bitmap, scaleFactor)
             imageView.setImageBitmap(scaledBitmap)
 
+            quadrangleView.pointerMinPosition.x = (imageView.width - scaledBitmap.width) / 2f
+            quadrangleView.pointerMinPosition.y = (imageView.height - scaledBitmap.height) / 2f
+
+            quadrangleView.pointerMaxPosition.x =
+                (imageView.width - scaledBitmap.width) / 2f + scaledBitmap.width
+            quadrangleView.pointerMaxPosition.y =
+                (imageView.height - scaledBitmap.height) / 2f + scaledBitmap.height
+
             val corners = DocScan.scan(scaledBitmap)
 
             if (corners.isNotEmpty()) {
-                val fixedCorners = fixPointsPosition(corners, scaledBitmap.width, scaledBitmap.height)
+                val fixedCorners =
+                    fixPointsPosition(corners, scaledBitmap.width, scaledBitmap.height)
                 quadrangleView.setCorners(fixedCorners)
 
                 val scaledCorners = scalePoints(corners, 1f / scaleFactor)
@@ -58,13 +78,17 @@ class ScannerImageView(
             } else {
                 if (selectAllOnError) {
                     val cornersWholeImage = listOf(
-                        Point(0, 0),
-                        Point(scaledBitmap.width, 0),
-                        Point(scaledBitmap.width, scaledBitmap.height),
-                        Point(0, scaledBitmap.height)
+                        PointF(0f, 0f),
+                        PointF(scaledBitmap.width.toFloat(), 0f),
+                        PointF(scaledBitmap.width.toFloat(), scaledBitmap.height.toFloat()),
+                        PointF(0f, scaledBitmap.height.toFloat())
                     )
 
-                    val fixedCorners = fixPointsPosition(cornersWholeImage, scaledBitmap.width, scaledBitmap.height)
+                    val fixedCorners = fixPointsPosition(
+                        cornersWholeImage,
+                        scaledBitmap.width,
+                        scaledBitmap.height
+                    )
                     quadrangleView.setCorners(fixedCorners)
 
                     val scaledCorners = scalePoints(cornersWholeImage, 1f / scaleFactor)
@@ -78,13 +102,13 @@ class ScannerImageView(
         }
     }
 
-    private fun scalePoints(points: List<Point>, scaleFactor: Float): List<Point> {
-        val scaledPoints = mutableListOf<Point>()
+    private fun scalePoints(points: List<PointF>, scaleFactor: Float): List<PointF> {
+        val scaledPoints = mutableListOf<PointF>()
         for (point in points) {
             scaledPoints.add(
-                Point(
-                    (point.x * scaleFactor).toInt(),
-                    (point.y * scaleFactor).toInt()
+                PointF(
+                    point.x * scaleFactor,
+                    point.y * scaleFactor
                 )
             )
         }
@@ -94,8 +118,12 @@ class ScannerImageView(
     /**
      * Fix the position of the Points to be centered in the QuadrangleView according to the input bitmap.
      */
-    private fun fixPointsPosition(points: List<Point>, bitmapWidth: Int, bitmapHeight: Int): List<Point> {
-        val fixedPoints = mutableListOf<Point>()
+    private fun fixPointsPosition(
+        points: List<PointF>,
+        bitmapWidth: Int,
+        bitmapHeight: Int
+    ): List<PointF> {
+        val fixedPoints = mutableListOf<PointF>()
 
         val quadrangleViewWidth = quadrangleView.width
         val quadrangleViewHeight = quadrangleView.height
@@ -103,11 +131,11 @@ class ScannerImageView(
         val xDiff = (quadrangleViewWidth - bitmapWidth) / 2
         val yDiff = (quadrangleViewHeight - bitmapHeight) / 2
 
-        for (point in points) {
+        points.forEach {
             fixedPoints.add(
-                Point(
-                    point.x + xDiff,
-                    point.y + yDiff
+                PointF(
+                    it.x + xDiff,
+                    it.y + yDiff
                 )
             )
         }
@@ -146,7 +174,7 @@ class ScannerImageView(
     class ScanResult(
         private val context: Context,
         val bitmap: Bitmap,
-        val corners: List<Point>
+        val corners: List<PointF>
     ) {
 
         fun crop(
@@ -154,18 +182,19 @@ class ScannerImageView(
                 "docscan_cropped",
                 PHOTO_EXTENSION,
                 context.cacheDir
-            )
+            ),
+            quality: Int = 100
         ): Uri {
             val croppedBitmap = DocScan.crop(bitmap, corners)
-
-            croppedBitmap.saveInFile(outputFile)
+            Log.d(TAG, "crop: size ${croppedBitmap.width}x${croppedBitmap.height}")
+            croppedBitmap.saveInFile(outputFile, quality)
 
             return Uri.fromFile(outputFile)
         }
     }
 
     companion object {
-        private const val TAG = "ScannerCameraView"
+        private const val TAG = "ImageScannerView"
         private const val PHOTO_EXTENSION = ".jpg"
     }
 }

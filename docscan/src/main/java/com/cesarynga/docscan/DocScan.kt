@@ -7,9 +7,12 @@ import org.opencv.android.Utils
 import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.sqrt
 
 object DocScan {
+    private const val TAG = "DocScan"
+    private const val MAX_SIDE_SIZE = 640f
 
     init {
         OpenCVLoader.initDebug()
@@ -20,16 +23,20 @@ object DocScan {
     //======================================
     fun scan(
         bitmap: Bitmap,
-        threshold1: Int = 50,
-        threshold2: Int = 100
-    ): List<android.graphics.Point> {
+        minArea: Int = 100_000,
+        threshold1: Int = 70,
+        threshold2: Int = 140
+    ): List<android.graphics.PointF> {
         var mat = bitmapToMat(bitmap)
+        val ratio = MAX_SIDE_SIZE / max(mat.width(), mat.height())
+
+        mat = resize(mat, ratio)
 
         mat = grayScale(mat)
 
-        val blur = blur(mat)
+        mat = blur(mat)
 
-        mat = canny(blur, threshold1, threshold2)
+        mat = canny(mat, threshold1, threshold2)
 
         mat = dilate(mat)
 
@@ -39,21 +46,32 @@ object DocScan {
         mat.release()
 
         if (contours.isNotEmpty()) {
-            val biggest = biggestContours(contours) ?: return emptyList()
+            val biggest = biggestContours(contours, (minArea * ratio).toInt()) ?: return emptyList()
 
             val reordered = reorderPoints(biggest)
 
+            val scaledBack = scalePoints(reordered, 1 / ratio)
+
+            // Just for printing the points in logcat
             val stringBuilder = StringBuilder()
-            reordered.forEachIndexed { index, point ->
+            scaledBack.forEachIndexed { index, point ->
                 if (index == 0) stringBuilder.append("[")
                 stringBuilder.append("(${point.x},${point.y})")
                 if (index == reordered.size - 1) stringBuilder.append("]")
             }
-            Log.d("DocScan", "Corners: $stringBuilder")
-            return reordered
+            Log.d(TAG, "scan: corners=$stringBuilder")
+
+            return scaledBack
         }
 
         return emptyList()
+    }
+
+    private fun resize(src: Mat, ratio: Float): Mat {
+        val size = Size(src.width() * ratio.toDouble(), src.height() * ratio.toDouble())
+        val resized = Mat(size, src.type())
+        Imgproc.resize(src, resized, size)
+        return resized
     }
 
     private fun grayScale(src: Mat): Mat {
@@ -114,7 +132,7 @@ object DocScan {
         return contours
     }
 
-    private fun biggestContours(contours: List<MatOfPoint>, minArea: Int = 5000): MatOfPoint2f? {
+    private fun biggestContours(contours: List<MatOfPoint>, minArea: Int): MatOfPoint2f? {
         var biggest: MatOfPoint2f? = null
         var maxArea = 0.0
 
@@ -134,25 +152,28 @@ object DocScan {
                 }
             }
         }
+        if (biggest != null) {
+            Log.d(TAG, "biggestContours: max area=$maxArea")
+        }
         return biggest
     }
 
-    private fun reorderPoints(point2f: MatOfPoint2f): List<android.graphics.Point> {
+    private fun reorderPoints(point2f: MatOfPoint2f): List<android.graphics.PointF> {
         val points = listOf(*point2f.toArray())
 
-        val centerPoint = android.graphics.Point()
+        val centerPoint = android.graphics.PointF()
         val size = points.size
 
         points.forEach { pointF ->
-            centerPoint.x += (pointF.x / size).toInt()
-            centerPoint.y += (pointF.y / size).toInt()
+            centerPoint.x += (pointF.x / size).toFloat()
+            centerPoint.y += (pointF.y / size).toFloat()
         }
 
         val orderedPoints = mutableListOf(
-            android.graphics.Point(),
-            android.graphics.Point(),
-            android.graphics.Point(),
-            android.graphics.Point()
+            android.graphics.PointF(),
+            android.graphics.PointF(),
+            android.graphics.PointF(),
+            android.graphics.PointF()
         )
 
         points.forEach { point ->
@@ -167,8 +188,8 @@ object DocScan {
                 index = 3
             }
             if (index != -1) {
-                orderedPoints[index].x = point.x.toInt()
-                orderedPoints[index].y = point.y.toInt()
+                orderedPoints[index].x = point.x.toFloat()
+                orderedPoints[index].y = point.y.toFloat()
             } else {
                 return emptyList()
             }
@@ -211,10 +232,22 @@ object DocScan {
         return (dx1 * dx2 + dy1 * dy2) / sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10)
     }
 
+    private fun scalePoint(point: android.graphics.PointF, ratio: Float): android.graphics.PointF {
+        return android.graphics.PointF(point.x * ratio, point.y * ratio)
+    }
+
+    private fun scalePoints(points: List<android.graphics.PointF>, ratio: Float): List<android.graphics.PointF> {
+        val scaledPoints = mutableListOf<android.graphics.PointF>()
+        points.forEach {
+            scaledPoints.add(scalePoint(it, ratio))
+        }
+        return scaledPoints
+    }
+
     // =====================================
     // Dewarping
     //======================================
-    fun crop(bitmap: Bitmap, corners: List<android.graphics.Point>): Bitmap {
+    fun crop(bitmap: Bitmap, corners: List<android.graphics.PointF>): Bitmap {
         if (corners.size != 4) {
             throw IllegalArgumentException("corners param must have 4 items. Current corners params has ${corners.size} items.")
         }

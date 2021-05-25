@@ -5,11 +5,12 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Base64
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.cesarynga.docscan.image.ScannerImageView
+import com.cesarynga.docscan.image.ImageScannerView
 import com.cesarynga.docscan.rotateWithExif
 import com.cesarynga.docscan.sample.databinding.ActivityScannerImageBinding
 import java.lang.Exception
@@ -18,9 +19,9 @@ class ScannerImageActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityScannerImageBinding
 
-    private val sampleImage = R.drawable.sample_mutlitple_shapes
+    private var sampleImage = R.drawable.sample_check
 
-    private var scanResult: ScannerImageView.ScanResult? = null
+    private var scanResult: ImageScannerView.ScanResult? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +36,7 @@ class ScannerImageActivity : AppCompatActivity() {
                     bitmap = bitmap.rotateWithExif(photoUri.path!!)
                 scanImage(bitmap)
             }
+            Base64.NO_WRAP
         } else {
             val bitmap = BitmapFactory.decodeResource(resources, sampleImage)
             scanImage(bitmap)
@@ -45,8 +47,8 @@ class ScannerImageActivity : AppCompatActivity() {
         with(binding) {
             scannerImageView.scan(
                 bitmap,
-                callback = object : ScannerImageView.ScannerImageCallback {
-                    override fun onScanSuccess(scanResult: ScannerImageView.ScanResult) {
+                callback = object : ImageScannerView.ScannerImageCallback {
+                    override fun onScanSuccess(scanResult: ImageScannerView.ScanResult) {
                         this@ScannerImageActivity.scanResult = scanResult
                     }
 
@@ -69,12 +71,25 @@ class ScannerImageActivity : AppCompatActivity() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.crop, menu)
+        menuInflater.inflate(R.menu.menu_scanner_image, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        crop()
+        if (item.itemId == R.id.action_crop) {
+            crop()
+        } else {
+            sampleImage = when (item.itemId) {
+                R.id.action_sample_check -> R.drawable.sample_check
+                R.id.action_sample_document -> R.drawable.sample_document
+                R.id.action_sample_multiple_shapes -> R.drawable.sample_mutlitple_shapes
+                else -> R.drawable.sample_check
+            }
+            item.isChecked = true
+            val bitmap = BitmapFactory.decodeResource(resources, sampleImage)
+            scanImage(bitmap)
+        }
+
         return true
     }
 }
